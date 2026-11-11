@@ -1,0 +1,13 @@
+---
+# Config for ansible-lint. Run it (and everything else CI runs) locally with:
+#   ./scripts/check.sh
+profile: production
+
+exclude_paths:
+  - .github/          # CI workflow YAML is not Ansible content
+  - .venv/            # local toolchain (gitignored)
+{%- if python_pin %}
+  - .python/          # uv and the interpreter it downloads (gitignored)
+{%- endif %}
+  - .ansible/         # ansible-lint's cache and local collections (gitignored)
+  - work/             # scratch files, not repo content (gitignored)

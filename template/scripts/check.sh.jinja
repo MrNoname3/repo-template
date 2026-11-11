@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Release gate — the single entry point for every repo check.
+#
+#   ./scripts/check.sh
+#
+# CI (.github/workflows/ci.yml) runs exactly this script, so a local pass means
+# a CI pass. The shared steps come from scripts/lib/gate.sh (managed by
+# repo-template); this repository's own steps go between them.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# shellcheck source=lib/gate.sh
+. scripts/lib/gate.sh
+
+gate_toolchain
+{%- if ansible %}
+gate_ansible
+{%- endif %}
+gate_shellcheck
+gate_secret_scan
+gate_done

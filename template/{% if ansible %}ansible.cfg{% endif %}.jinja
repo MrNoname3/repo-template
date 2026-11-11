@@ -1,0 +1,8 @@
+[defaults]
+inventory = inventory.ini
+roles_path = roles
+{%- if galaxy %}
+# Repo-local collections, installed by scripts/ensure-venv.sh.
+collections_path = .ansible/collections
+{%- endif %}
+interpreter_python = auto_silent

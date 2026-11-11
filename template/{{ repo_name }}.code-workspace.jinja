@@ -1,0 +1,32 @@
+{
+	"folders": [
+		{
+			"name": "{{ repo_name }}",
+			"path": "."
+		}
+	],
+	"settings": {
+{%- if ansible %}
+		// Treat the playbook/role YAML as Ansible so the Ansible extension lints it.
+		"files.associations": {
+			"site.yml": "ansible",
+			"**/tasks/*.yml": "ansible",
+			"**/handlers/*.yml": "ansible",
+			"**/meta/*.yml": "ansible"
+		},
+{%- endif %}
+		// work/ stays visible in the explorer; its downloads and images are kept
+		// out of search and file watching.
+		"search.exclude": { "work/**": true },
+		"files.watcherExclude": { "**/work/**": true },
+		"files.trimTrailingWhitespace": true,
+		"files.insertFinalNewline": true
+	},
+	"extensions": {
+		"recommendations": [
+			"editorconfig.editorconfig"{% if ansible %},
+			"redhat.ansible",
+			"redhat.vscode-yaml"{% endif %}
+		]
+	}
+}

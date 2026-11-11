@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>MrNoname3/renovate-config"
+  ],
+  "pip_requirements": {
+    "description": "The template's own pins too: a new repository starts from them",
+    "managerFilePatterns": [
+      "/(^|/)requirements[^/]*\\.txt$/",
+      "/^template/.*requirements[^/]*\\.txt[^/]*\\.jinja$/"
+    ]
+  },
+  "github-actions": {
+    "description": "The template's workflow too: a new repository starts from it",
+    "managerFilePatterns": [
+      "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+      "/^template/\\.github/workflows/[^/]+\\.ya?ml\\.jinja$/"
+    ]
+  }
+}

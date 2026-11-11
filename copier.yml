@@ -1,0 +1,82 @@
+# Copier template for the repositories on the forge. README.md says how to
+# create a repository from it and how an update reaches the repositories.
+_min_copier_version: "9.4"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+# Shell's ${#array[@]} would open a Jinja comment.
+_envops:
+  comment_start_string: "{##"
+  comment_end_string: "##}"
+
+# Created once and then the repository's own: an update never touches them.
+_skip_if_exists:
+  - README.md
+  - AGENTS.md
+  - LICENSE
+  - renovate.json
+  - "*.code-workspace"
+  - requirements.txt
+  - requirements-uv.txt
+  - requirements.yml
+  - .python-version
+  - .ansible-lint
+  - ansible.cfg
+  - inventory.ini
+  - site.yml
+  - scripts/check.sh
+  - .secret-allow
+
+repo_name:
+  type: str
+  help: The repository's name
+  default: "{{ _folder_name }}"
+
+description:
+  type: str
+  help: One line on what the repository is
+  default: ""
+
+visibility:
+  type: str
+  help: Is the repository public or private?
+  choices: [private, public]
+  default: private
+
+copyright_year:
+  type: str
+  help: The year in the LICENSE's copyright line
+  default: "2026"
+  when: "{{ visibility == 'public' }}"
+
+scan_identifiers:
+  type: bool
+  help: Should the secret scan also fail on IPv4 and MAC addresses and UUIDs?
+  default: "{{ visibility == 'public' }}"
+
+ansible:
+  type: bool
+  help: Is this an Ansible repository (site.yml, ansible-lint)?
+  default: false
+
+galaxy:
+  type: bool
+  help: Does it install Ansible collections from requirements.yml?
+  default: false
+  when: "{{ ansible }}"
+
+python_pin:
+  type: bool
+  help: Should the toolchain run on a pinned Python version, downloaded by uv where the OS has another?
+  default: true
+
+python_version:
+  type: str
+  help: The pinned Python version
+  default: "3.14"
+  when: "{{ python_pin }}"
+
+ci_timeout:
+  type: int
+  help: CI job timeout in minutes
+  default: 15
