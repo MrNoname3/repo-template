@@ -44,7 +44,8 @@ Copier asks the questions in `copier.yml` (visibility, Ansible, pinned Python,
 
 ## An update
 
-Tag a new version here (`vX.Y.Z`). In a repository:
+Tag a new version here (`vX.Y.Z`); the Sync workflow opens the pull requests
+(below). By hand, in a repository:
 
 ```bash
 uvx copier update --defaults
@@ -59,3 +60,23 @@ template's changes into the repository's. Look at `git diff`, run
 `./scripts/check.sh` renders the template in each of its variants
 (`tests/render.sh`) and runs every rendered repository's own release gate, on
 top of the template repository's own checks.
+
+## The forge side: forge.toml and the Sync workflow
+
+`forge.toml` holds what a repository has besides its files: its settings, the
+default branch's protection, the Renovate bot as a collaborator, and the
+labels Renovate and the sync put on pull requests. The **Sync** workflow
+(`scripts/sync.py`) applies it hourly, and at once on a new tag or a change to
+`forge.toml`:
+
+- every repository built from this template gets the settings, the
+  protection and the collaborators, so a new one is set up within the hour of
+  its first push;
+- every repository with a `renovate.json` gets the labels;
+- a repository whose `.copier-answers.yml` names an older tag than the newest
+  one gets a pull request with `copier update` to it, labelled `template`;
+  merge conflicts are marked in its title and listed in its body.
+
+It never deletes anything. It needs the `SYNC_TOKEN` Actions secret, a token
+with read-write access to repositories and issues; a manual run can be a dry
+run that only prints the plan.

@@ -1,0 +1,53 @@
+name: Sync
+
+# Applies forge.toml and the newest template tag to the owner's repositories
+# (scripts/sync.py): settings, branch protection, collaborators and labels, and
+# a pull request with `copier update` where a repository is behind. Hourly, so
+# a new repository is set up within the hour; at once on a new tag or a change
+# to forge.toml. A push to another branch only checks forge.toml.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - forge.toml
+      - scripts/sync.py
+      - .github/workflows/sync.yml
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only print what would change
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain (copier)
+        run: ./scripts/ensure-venv.sh
+
+      - name: Sync the repositories
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          APPLY: ${{ inputs.dry_run != true && '--apply' || '' }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "::warning::SYNC_TOKEN is not set: nothing was changed"
+            APPLY=
+          fi
+          python3 scripts/sync.py $APPLY

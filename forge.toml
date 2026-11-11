@@ -1,0 +1,43 @@
+# What every repository on the forge has besides its files. scripts/sync.py
+# applies it (.github/workflows/sync.yml runs that hourly):
+#   - [repository], [protection] and [[collaborator]] to every repository built
+#     from this template (it has a .copier-answers.yml naming it);
+#   - [[label]] to every repository with a renovate.json, where Renovate uses
+#     the labels; `repos` limits a label to the repositories named.
+# The sync only creates and changes; removing an entry here deletes nothing.
+
+[repository]
+default_delete_branch_after_merge = true
+allow_manual_merge = true
+autodetect_manual_merge = true
+
+[protection]
+# On the default branch. Pushes stay allowed; a merge needs CI's check.
+status_check_contexts = ["CI / check (push)"]
+block_on_outdated_branch = true
+
+[[collaborator]]
+name = "renovate"
+permission = "write"
+
+[[label]]
+name = "dependencies"
+color = "0366d6"
+description = "A dependency update opened by Renovate"
+
+[[label]]
+name = "ppa"
+color = "d93f0b"
+description = "After merging: rebuild and upload the PPA's source packages"
+repos = ["machine-setup"]
+
+[[label]]
+name = "containers"
+color = "fbca04"
+description = "After merging: apply the playbook on the server"
+repos = ["homeserver-setup"]
+
+[[label]]
+name = "template"
+color = "5319e7"
+description = "An update from repo-template, opened by its sync"
