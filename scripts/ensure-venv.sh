@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Ensure the repo-local toolchain: .venv/ with the tools pinned in
-# requirements.txt, on the Python minor version of .python-version — the OS
+# requirements.txt, on the Python minor version of .python-version: the OS
 # Python when it is that version, otherwise one that uv (pinned in
-# requirements-uv.txt) downloads into .python/. All of it is gitignored and lives inside the
-# checkout, so deleting the repo directory removes the whole toolchain —
-# nothing is installed system-wide.
+# requirements-uv.txt) downloads into .python/.
+# All of it is gitignored and lives inside the checkout, so deleting the repo
+# directory removes the whole toolchain: nothing is installed system-wide.
 #
-# Called by scripts/check.sh; safe to run directly.
+# Called by scripts/check.sh and any other script that needs the toolchain;
+# safe to run directly.
 # Managed by repo-template: changes here are overwritten by its next update.
 set -euo pipefail
 cd "$(dirname "$0")/.."
