@@ -266,7 +266,7 @@ def main():
         return
     owner = os.environ["GITHUB_REPOSITORY_OWNER"]
     Sync(Forge(os.environ["GITHUB_API_URL"], token), owner, os.environ["GITHUB_SERVER_URL"],
-         token, config, args.apply).run(set(args.repos), args.copier)
+         token, config, args.apply).run(set(args.repos), os.path.abspath(args.copier))
 
 
 if __name__ == "__main__":

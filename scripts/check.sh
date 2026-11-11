@@ -16,7 +16,7 @@ gate_toolchain
 gate_shellcheck
 
 step "forge.toml (scripts/sync.py, no token: the file only)"
-SYNC_TOKEN= "$VENV/bin/python" scripts/sync.py
+env -u SYNC_TOKEN "$VENV/bin/python" scripts/sync.py
 
 step "template variants (tests/render.sh)"
 tests/render.sh
