@@ -86,7 +86,10 @@ labels Renovate and the sync put on pull requests. The **Sync** workflow
 - every repository with a `renovate.json` gets the labels;
 - a repository whose `.copier-answers.yml` names an older tag than the newest
   one gets a pull request with `copier update` to it, labelled `template`;
-  merge conflicts are marked in its title and listed in its body.
+  merge conflicts are marked in its title and listed in its body, and the
+  gate's last step fails on the markers they leave, so such a pull request
+  cannot pass CI until they are resolved. A newer tag's pull request closes
+  the older ones, and so does catching up.
 
 It never deletes anything. It needs the `SYNC_TOKEN` Actions secret, a token
 with read-write access to repositories and issues; a manual run can be a dry

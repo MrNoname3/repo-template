@@ -37,6 +37,12 @@ render() { # render <name> <copier --data arguments...>
 }
 
 render plain --data visibility=private --data ansible=false --data python_pin=false
+printf '<<<<<<< before updating\nx\n>>>>>>> after updating\n' > "$OUT/plain/merged.txt"
+commit "$OUT/plain"
+expect_fail "$OUT/plain" "an unresolved merge conflict"
+git -C "$OUT/plain" rm --quiet merged.txt
+commit "$OUT/plain"
+
 # A venv that lost its pip is rebuilt, not trusted.
 rm -rf "$OUT"/plain/.venv/lib/python3*/site-packages/pip
 (cd "$OUT/plain" && ./scripts/check.sh > /dev/null)

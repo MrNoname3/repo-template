@@ -180,10 +180,24 @@ class Sync:
         })
         return env
 
+    def close_stale(self, repo, keep):
+        """Close the open template pull requests other than `keep`, and delete their branches."""
+        base = f"/repos/{q(self.owner)}/{q(repo)}"
+        for pr in self.forge.pages(f"{base}/pulls?state=open"):
+            ref = pr["head"]["ref"]
+            if ref.startswith("template/") and ref != keep:
+                self.change(repo, f"close #{pr['number']} ({ref}), superseded", "PATCH",
+                            f"{base}/pulls/{pr['number']}", {"state": "closed"})
+                self.change(repo, f"delete branch {ref}", "DELETE",
+                            f"{base}/branches/{q(ref, safe='')}", None)
+
     def template_update(self, repo, branch, answers, latest, copier):
-        if not latest or answers.get("_commit") == latest:
+        if not latest:
             return
         head = f"template/{latest}"
+        self.close_stale(repo, None if answers.get("_commit") == latest else head)
+        if answers.get("_commit") == latest:
+            return
         if self.forge.call("GET", f"/repos/{q(self.owner)}/{q(repo)}/branches/{q(head, safe='')}")[0] != 404:
             return
         self.changes += 1
