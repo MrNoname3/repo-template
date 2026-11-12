@@ -14,7 +14,7 @@ overwrites them.
 | `scripts/ensure-venv.sh` — the repo-local `.venv/` (and pinned Python, Ansible collections) | `requirements.txt`, `requirements-uv.txt`, `.python-version`, `requirements.yml` — the pins Renovate moves |
 | `.github/workflows/ci.yml` — runs `scripts/check.sh` | `renovate.json` — extends the shared presets |
 | `.gitignore` (the shared part; a repository adds its own lines) | `README.md`, `AGENTS.md`, `LICENSE`, `*.code-workspace` |
-| `.editorconfig`, `.shellcheckrc`, `CLAUDE.md`, `.gitea/` merge messages, `work/` | `ansible.cfg`, `inventory.ini`, `site.yml`, `.ansible-lint`, `.secret-allow` |
+| `.editorconfig`, `.shellcheckrc`, `CLAUDE.md`, `.gitea/` merge messages, `work/` | `ansible.cfg`, `inventory.ini`, `site.yml`, `.ansible-lint`, `pyproject.toml`, `.secret-allow` |
 
 A managed file says so in its header. Change it here, not in the repository:
 the repository's copy is replaced by the next update, except for lines the

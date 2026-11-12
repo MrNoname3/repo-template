@@ -24,6 +24,7 @@ _skip_if_exists:
   - ansible.cfg
   - inventory.ini
   - site.yml
+  - pyproject.toml
   - scripts/check.sh
   - .secret-allow
 
@@ -64,6 +65,11 @@ galaxy:
   help: Does it install Ansible collections from requirements.yml?
   default: false
   when: "{{ ansible }}"
+
+python_project:
+  type: bool
+  help: Is this a Python project (ruff and pyright in the toolchain, configured in pyproject.toml)?
+  default: false
 
 python_pin:
   type: bool

@@ -67,6 +67,18 @@ commit "$OUT/ansible-public"
 (cd "$OUT/ansible-public" && ./scripts/check.sh > /dev/null)
 echo "OK: .secret-allow lets the address through"
 
+render python --data visibility=private --data python_project=true --data python_pin=false
+printf 'def double(x: int) -> int:\n    return x * 2\n\n\nhalf: str = double(2)\n' > "$OUT/python/typed.py"
+commit "$OUT/python"
+expect_fail "$OUT/python" "a type error (pyright)"
+printf 'import os\n\n\ndef double(x: int) -> int:\n    return x * 2\n' > "$OUT/python/typed.py"
+commit "$OUT/python"
+expect_fail "$OUT/python" "an unused import (ruff)"
+printf 'def double(x: int) -> int:\n    return x * 2\n' > "$OUT/python/typed.py"
+commit "$OUT/python"
+(cd "$OUT/python" && ./scripts/check.sh > /dev/null)
+echo "OK: the same module passes once it is clean"
+
 render ansible-galaxy --data visibility=private --data ansible=true --data galaxy=true \
   --data python_pin=true --data python_version=3.13
 

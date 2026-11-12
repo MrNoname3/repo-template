@@ -26,6 +26,10 @@ host_vars/*/local.yml
 
 # Python bytecode: it records the absolute path of its source, a home directory included.
 __pycache__/
+{%- if python_project %}
+.ruff_cache/
+*.egg-info/
+{%- endif %}
 
 # Private secret-scan patterns for scripts/check.sh — never commit.
 .secret-patterns.local

@@ -23,6 +23,10 @@ print("Python", sys.version.split()[0], "from",
   "$VENV/bin/ansible-lint" --version
 {%- endif %}
   "$VENV/bin/shellcheck" --version | sed -n 2p
+{%- if python_project %}
+  if [ -x "$VENV/bin/ruff" ]; then "$VENV/bin/ruff" --version; fi
+  if [ -x "$VENV/bin/pyright" ]; then "$VENV/bin/pyright" --version; fi
+{%- endif %}
 }
 {%- if ansible %}
 
@@ -35,6 +39,21 @@ gate_ansible() {
 }
 {%- endif %}
 
+{% if python_project -%}
+# The Python tools the toolchain has (see pyproject.toml for their settings):
+# ruff's lint where ruff is pinned, pyright's type check where pyright is.
+gate_python() {
+  if [ -x "$VENV/bin/ruff" ]; then
+    step "ruff"
+    "$VENV/bin/ruff" check .
+  fi
+  if [ -x "$VENV/bin/pyright" ]; then
+    step "pyright"
+    "$VENV/bin/pyright"
+  fi
+}
+
+{% endif -%}
 # Every tracked shell script: *.sh files and files with a shell shebang. Jinja
 # templates are not shell until they are rendered.
 gate_shellcheck() {

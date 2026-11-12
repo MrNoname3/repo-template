@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Ensure the repo-local toolchain: .venv/ with the tools pinned in
+# Ensure the repo-local toolchain: .venv/ with the pins of requirements.txt
+# and, where there is one, requirements-dev.txt.
 {% if python_pin -%}
-# requirements.txt, on the Python minor version of .python-version: the OS
-# Python when it is that version, otherwise one that uv (pinned in
-# requirements-uv.txt) downloads into .python/.
-{% else -%}
-# requirements.txt.
+# It runs on the Python minor version of .python-version: the OS Python when
+# it is that version, otherwise one that uv (pinned in requirements-uv.txt)
+# downloads into .python/.
 {% endif -%}
 {% if galaxy -%}
 # The Ansible collections of requirements.yml go into .ansible/.
@@ -96,8 +95,12 @@ if [ ! -x "$VENV/bin/python" ]; then
 fi
 {%- endif %}
 
-# Fast no-op when already satisfied; picks up Renovate bumps of the pins.
-"$VENV/bin/pip" install --quiet -r requirements.txt
+# Fast no-op when already satisfied; picks up Renovate bumps of the pins. A
+# requirements-dev.txt, where there is one, holds the tools beside the
+# project's own dependencies.
+reqs=(-r requirements.txt)
+if [ -f requirements-dev.txt ]; then reqs+=(-r requirements-dev.txt); fi
+"$VENV/bin/pip" install --quiet "${reqs[@]}"
 {%- if galaxy %}
 
 # The collections' own repositories (github.com/ansible-collections/<name>),
