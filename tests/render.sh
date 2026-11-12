@@ -37,6 +37,11 @@ render() { # render <name> <copier --data arguments...>
 }
 
 render plain --data visibility=private --data ansible=false --data python_pin=false
+# A venv that lost its pip is rebuilt, not trusted.
+rm -rf "$OUT"/plain/.venv/lib/python3*/site-packages/pip
+(cd "$OUT/plain" && ./scripts/check.sh > /dev/null)
+echo "OK: a venv without pip is rebuilt"
+
 # Put together here, so this file does not trip the template repository's own scan.
 printf -- '-----BEGIN OPENSSH %s-----\n' 'PRIVATE KEY' > "$OUT/plain/key.txt"
 commit "$OUT/plain"
