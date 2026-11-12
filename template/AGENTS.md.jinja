@@ -36,7 +36,7 @@ reference. That a command exited 0 does not show it worked. Write "works" or
 
 ## Before a commit and a push
 
-- `./scripts/check.sh` must pass; CI runs the same script.
-- Stage files by name and look at `git diff --cached --stat` before committing.
+{% if shared_gate %}- `./scripts/check.sh` must pass; CI runs the same script.
+{% endif %}- Stage files by name and look at `git diff --cached --stat` before committing.
 - Files marked "Managed by repo-template" are overwritten by the template's
   next update: change them in repo-template instead.

@@ -16,6 +16,11 @@ overwrites them.
 | `.gitignore` (the shared part; a repository adds its own lines) | `README.md`, `AGENTS.md`, `LICENSE`, `*.code-workspace` |
 | `.editorconfig`, `.shellcheckrc`, `CLAUDE.md`, `.gitea/` merge messages, `work/` | `ansible.cfg`, `inventory.ini`, `site.yml`, `.ansible-lint`, `pyproject.toml`, `.secret-allow` |
 
+A repository with a release gate of its own answers `shared_gate: false`: it
+gets only the shared files (`.editorconfig`,
+`CLAUDE.md`, the merge messages, the shared `.gitignore`, `work/`) and the
+forge settings, and none of the gate, the toolchain or the CI workflow.
+
 A managed file says so in its header. Change it here, not in the repository:
 the repository's copy is replaced by the next update, except for lines the
 repository added, which a three-way merge keeps.

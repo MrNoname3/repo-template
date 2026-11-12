@@ -49,6 +49,11 @@ rm -rf "$OUT"/plain/.venv/lib/python3*/site-packages/pip
 echo "OK: a venv without pip is rebuilt"
 
 # Put together here, so this file does not trip the template repository's own scan.
+printf 'url: https://%s:%s@example.com/\n' user secret > "$OUT/plain/remote.txt"
+commit "$OUT/plain"
+expect_fail "$OUT/plain" "credentials in a URL"
+git -C "$OUT/plain" rm --quiet remote.txt
+commit "$OUT/plain"
 printf -- '-----BEGIN OPENSSH %s-----\n' 'PRIVATE KEY' > "$OUT/plain/key.txt"
 commit "$OUT/plain"
 expect_fail "$OUT/plain" "a private key"
@@ -59,6 +64,11 @@ mkdir -p "$OUT/ansible-public/host_vars/somehost"
 touch "$OUT/ansible-public/host_vars/somehost/local.yml"
 git -C "$OUT/ansible-public" check-ignore -q host_vars/somehost/local.yml
 echo "OK: a host's local.yml is ignored"
+printf 'path: /%s/someone/notes\n' home > "$OUT/ansible-public/home.txt"
+commit "$OUT/ansible-public"
+expect_fail "$OUT/ansible-public" "a home directory path"
+git -C "$OUT/ansible-public" rm --quiet home.txt
+commit "$OUT/ansible-public"
 echo "server: 203.0.114.$((4 + 1))" > "$OUT/ansible-public/host.txt"
 commit "$OUT/ansible-public"
 expect_fail "$OUT/ansible-public" "a LAN-like IPv4 address"
@@ -78,6 +88,17 @@ printf 'def double(x: int) -> int:\n    return x * 2\n' > "$OUT/python/typed.py"
 commit "$OUT/python"
 (cd "$OUT/python" && ./scripts/check.sh > /dev/null)
 echo "OK: the same module passes once it is clean"
+
+# Without the shared gate: the shared files only, nothing of the gate.
+printf '\n##### variant: own-gate\n'
+"$COPIER" copy --quiet --defaults --vcs-ref HEAD --data repo_name=own-gate --data shared_gate=false . "$OUT/own-gate"
+for f in .editorconfig CLAUDE.md .gitignore .gitea/default_merge_message/MERGE_TEMPLATE.md work/.gitkeep; do
+  [ -e "$OUT/own-gate/$f" ] || { echo "FAIL: own-gate lacks $f" >&2; exit 1; }
+done
+for f in scripts .github/workflows/ci.yml requirements.txt .python-version .secret-allow .shellcheckrc; do
+  [ ! -e "$OUT/own-gate/$f" ] || { echo "FAIL: own-gate has $f" >&2; exit 1; }
+done
+echo "OK: own-gate has the shared files and none of the gate"
 
 render ansible-galaxy --data visibility=private --data ansible=true --data galaxy=true \
   --data python_pin=true --data python_version=3.13
