@@ -76,12 +76,13 @@ resolves, so no repository names the real host. Git maps it per machine:
 `git config --global url."https://<your-forge>/".insteadOf "https://forge.invalid/"`.
 
 **The sync** (`scripts/sync.py`, the **Sync** workflow, hourly and on a tag or
-a `forge.toml` change) applies `forge.toml` to every repository built from
-the template (branch protection only where Actions runs), the labels to
-every repository with a `renovate.json`, and opens the update pull requests,
-closing those a newer one replaces. It never deletes. It needs the
-`SYNC_TOKEN` secret (repository and issue read-write); a manual run can be a
-dry run.
+a `forge.toml` change) applies `forge.toml` to every repository built from the
+template (branch protection only where Actions runs), the labels to every
+repository with a `renovate.json`, and opens the update pull requests, closing
+those a newer one replaces and merging the base into one that has fallen
+behind, as protection accepts only an up-to-date branch. It never deletes. It
+needs the `SYNC_TOKEN` secret (repository and issue read-write); a manual run
+can be a dry run.
 
 **Checks.** `./scripts/check.sh` here renders every variant
 (`tests/render.sh`) and runs each one's gate, including that it fails on a

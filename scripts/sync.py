@@ -192,6 +192,18 @@ class Sync:
                 self.change(repo, f"delete branch {ref}", "DELETE",
                             f"{base}/branches/{q(ref, safe='')}", None)
 
+    def update_behind(self, repo, branch, head):
+        """Merge the base into the open template pull request when it is behind:
+        a protected branch accepts only an up-to-date one."""
+        base = f"/repos/{q(self.owner)}/{q(repo)}"
+        for pr in self.forge.pages(f"{base}/pulls?state=open"):
+            if pr["head"]["ref"] != head:
+                continue
+            behind = self.forge.get(f"{base}/compare/{q(pr['head']['sha'])}...{q(branch)}")
+            if behind and behind.get("total_commits"):
+                self.change(repo, f"update #{pr['number']} ({head}), {behind['total_commits']} behind {branch}",
+                            "POST", f"{base}/pulls/{pr['number']}/update?style=merge", None)
+
     def template_update(self, repo, branch, answers, latest, copier):
         if not latest:
             return
@@ -200,6 +212,7 @@ class Sync:
         if answers.get("_commit") == latest:
             return
         if self.forge.call("GET", f"/repos/{q(self.owner)}/{q(repo)}/branches/{q(head, safe='')}")[0] != 404:
+            self.update_behind(repo, branch, head)
             return
         self.changes += 1
         print(f"{repo}: pull request updating {answers.get('_commit')} -> {latest}")
