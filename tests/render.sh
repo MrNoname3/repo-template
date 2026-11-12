@@ -44,6 +44,10 @@ expect_fail "$OUT/plain" "a private key"
 
 render ansible-public --data visibility=public --data ansible=true --data galaxy=false \
   --data python_pin=true --data "python_version=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+mkdir -p "$OUT/ansible-public/host_vars/somehost"
+touch "$OUT/ansible-public/host_vars/somehost/local.yml"
+git -C "$OUT/ansible-public" check-ignore -q host_vars/somehost/local.yml
+echo "OK: a host's local.yml is ignored"
 echo "server: 203.0.114.$((4 + 1))" > "$OUT/ansible-public/host.txt"
 commit "$OUT/ansible-public"
 expect_fail "$OUT/ansible-public" "a LAN-like IPv4 address"

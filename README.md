@@ -42,6 +42,17 @@ uvx copier copy https://forge.invalid/MrNoname3/repo-template.git .
 Copier asks the questions in `copier.yml` (visibility, Ansible, pinned Python,
 ...). Run `./scripts/check.sh`, commit and push.
 
+## An existing repository
+
+```bash
+scripts/adopt.sh ~/Projects/<repo> --data ansible=true ...
+```
+
+writes the template over the repository's checkout and stops if a file the
+repository ignored before is no longer ignored. Then put the repository's own
+lines back into the managed files (`git diff` shows them), move its
+`check.sh` onto `scripts/lib/gate.sh` and run it.
+
 ## An update
 
 Tag a new version here (`vX.Y.Z`); the Sync workflow opens the pull requests

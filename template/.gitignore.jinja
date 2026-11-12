@@ -5,6 +5,12 @@
 id_rsa*
 id_ed25519*
 *.kdbx
+{%- if ansible %}
+# Ansible vault files, and the machine-local values site.yml keeps per host.
+secrets.yml
+*vault*
+host_vars/*/local.yml
+{%- endif %}
 
 # Repo-local toolchain, built by scripts/ensure-venv.sh.
 .venv/
