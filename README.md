@@ -81,7 +81,8 @@ labels Renovate and the sync put on pull requests. The **Sync** workflow
 `forge.toml`:
 
 - every repository built from this template gets the settings, the
-  protection and the collaborators, so a new one is set up within the hour of
+  protection (where Actions is on, as only Actions reports the check) and the
+  collaborators, so a new one is set up within the hour of
   its first push;
 - every repository with a `renovate.json` gets the labels;
 - a repository whose `.copier-answers.yml` names an older tag than the newest

@@ -125,6 +125,7 @@ class Sync:
                         f"/repos/{q(self.owner)}/{q(repo)}", {"description": answers["description"]})
 
     def protection(self, repo, branch):
+        """The default branch's rule; only where Actions runs, which reports its check."""
         want = dict(self.config.get("protection", {}))
         if not want:
             return
@@ -254,7 +255,11 @@ class Sync:
                 branch = repo["default_branch"]
                 self.settings(name, repo)
                 self.description(name, repo, answers)
-                self.protection(name, branch)
+                if repo.get("has_actions"):
+                    self.protection(name, branch)
+                else:
+                    # Nothing on the forge would ever report the required check.
+                    print(f"{name}: Actions off, so no required check on {branch}")
                 self.collaborators(name)
                 self.template_update(name, branch, answers, latest, copier)
             if self.forge.call("GET", f"/repos/{q(self.owner)}/{q(name)}/contents/renovate.json")[0] != 404:
