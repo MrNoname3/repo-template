@@ -59,7 +59,7 @@ commit "$OUT/plain"
 expect_fail "$OUT/plain" "a private key"
 
 render ansible-public --data visibility=public --data ansible=true --data galaxy=false \
-  --data python_pin=true --data "python_version=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+  --data python_pin=true --data python_version=3.14
 mkdir -p "$OUT/ansible-public/host_vars/somehost"
 touch "$OUT/ansible-public/host_vars/somehost/local.yml"
 git -C "$OUT/ansible-public" check-ignore -q host_vars/somehost/local.yml
