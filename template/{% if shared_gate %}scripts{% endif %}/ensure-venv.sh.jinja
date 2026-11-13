@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Ensure the repo-local toolchain: .venv/ with the tools pinned in
+# Ensure the repo-local toolchain: .venv/ with the pins of requirements.txt
+# and, where there is one, requirements-dev.txt.
 {% if python_pin -%}
-# requirements.txt, on the Python minor version of .python-version: the OS
-# Python when it is that version, otherwise one that uv (pinned in
-# requirements-uv.txt) downloads into .python/.
-{% else -%}
-# requirements.txt.
+# It runs on the Python minor version of .python-version: python<version> from
+# PATH or the OS Python when it is that version, otherwise one that uv (pinned
+# in requirements-uv.txt) downloads into .python/.
 {% endif -%}
 {% if galaxy -%}
 # The Ansible collections of requirements.yml go into .ansible/.
@@ -19,17 +18,22 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PYTHON="${PYTHON:-python3}"
 VENV=.venv
 {%- if python_pin %}
 TOOLS=.python
 PY_VERSION="$(cat .python-version)"
+# An explicit PYTHON wins; then python<version> from PATH, e.g. a deadsnakes
+# build in the CI image; then the OS Python.
+PYTHON="${PYTHON:-$(command -v "python$PY_VERSION" || echo python3)}"
+{%- else %}
+PYTHON="${PYTHON:-python3}"
 {%- endif %}
 
-# venv needs ensurepip; on Debian, Ubuntu and Mint that is the python3-venv package.
+# venv needs ensurepip; on Debian, Ubuntu and Mint that is the <python>-venv
+# package, python3-venv or python3.15-venv for example.
 "$PYTHON" -c 'import ensurepip' 2>/dev/null || {
   echo "ERROR: $PYTHON cannot create a venv (no ensurepip)." >&2
-  echo "On Debian, Ubuntu or Mint: sudo apt install python3-venv" >&2
+  echo "On Debian, Ubuntu or Mint: sudo apt install $(basename "$PYTHON")-venv" >&2
   exit 1
 }
 {%- if python_pin %}
@@ -67,10 +71,12 @@ if [ -d "$TOOLS" ] && is_pinned_python "$PYTHON"; then
   rm -rf "$TOOLS" "$VENV"
 fi
 
-# A venv breaks silently when the python it symlinks gets upgraded away, and
-# the pin can move on — probe it instead of trusting that the files exist.
-if [ -d "$VENV" ] && ! is_pinned_python "$VENV/bin/python"; then
-  echo "existing .venv is broken or not on Python $PY_VERSION — rebuilding"
+# A venv breaks silently when the python it symlinks gets upgraded away, or
+# loses its pip, and the pin can move on — probe it instead of trusting that
+# the files exist.
+if [ -d "$VENV" ] && ! { is_pinned_python "$VENV/bin/python" \
+    && "$VENV/bin/python" -m pip --version >/dev/null 2>&1; }; then
+  echo "existing .venv is broken, has no pip, or is not on Python $PY_VERSION — rebuilding"
   rm -rf "$VENV"
 fi
 
@@ -81,10 +87,10 @@ if [ ! -x "$VENV/bin/python" ]; then
 fi
 {%- else %}
 
-# A venv breaks silently when the OS python it symlinks gets upgraded away —
-# probe it instead of trusting that the files exist.
-if [ -d "$VENV" ] && ! "$VENV/bin/python" -c '' 2>/dev/null; then
-  echo "existing .venv is broken (OS python changed?) — rebuilding"
+# A venv breaks silently when the OS python it symlinks gets upgraded away, or
+# loses its pip — probe it instead of trusting that the files exist.
+if [ -d "$VENV" ] && ! "$VENV/bin/python" -m pip --version >/dev/null 2>&1; then
+  echo "existing .venv is broken (OS python changed, or no pip) — rebuilding"
   rm -rf "$VENV"
 fi
 
@@ -94,8 +100,12 @@ if [ ! -x "$VENV/bin/python" ]; then
 fi
 {%- endif %}
 
-# Fast no-op when already satisfied; picks up Renovate bumps of the pins.
-"$VENV/bin/pip" install --quiet -r requirements.txt
+# Fast no-op when already satisfied; picks up Renovate bumps of the pins. A
+# requirements-dev.txt, where there is one, holds the tools beside the
+# project's own dependencies.
+reqs=(-r requirements.txt)
+if [ -f requirements-dev.txt ]; then reqs+=(-r requirements-dev.txt); fi
+"$VENV/bin/pip" install --quiet "${reqs[@]}"
 {%- if galaxy %}
 
 # The collections' own repositories (github.com/ansible-collections/<name>),

@@ -1,0 +1,22 @@
+# Python tooling configuration. ruff lints (`ruff check .`) and pyright type
+# checks, both from the repo-local .venv, both run by scripts/check.sh.
+[tool.ruff]
+line-length = 120
+extend-exclude = ["work"]
+
+[tool.ruff.lint]
+# An explicit rule set, not ruff's implicit default, which shifts between versions.
+select = [
+    "E4", "E7", "E9", "F",   # pyflakes and the pycodestyle subset ruff runs by default
+    "I",                      # import sorting
+    "B",                      # flake8-bugbear
+    "UP",                     # pyupgrade
+    "SIM",                    # flake8-simplify
+    "RUF",                    # ruff's own rules
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+exclude = ["work", ".venv", ".python", "**/__pycache__"]
+typeCheckingMode = "strict"

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Ensure the repo-local toolchain: .venv/ with the tools pinned in
-# requirements.txt, on the Python minor version of .python-version: the OS
-# Python when it is that version, otherwise one that uv (pinned in
-# requirements-uv.txt) downloads into .python/.
+# Ensure the repo-local toolchain: .venv/ with the pins of requirements.txt
+# and, where there is one, requirements-dev.txt.
+# It runs on the Python minor version of .python-version: python<version> from
+# PATH or the OS Python when it is that version, otherwise one that uv (pinned
+# in requirements-uv.txt) downloads into .python/.
 # All of it is gitignored and lives inside the checkout, so deleting the repo
 # directory removes the whole toolchain: nothing is installed system-wide.
 #
@@ -12,15 +13,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PYTHON="${PYTHON:-python3}"
 VENV=.venv
 TOOLS=.python
 PY_VERSION="$(cat .python-version)"
+# An explicit PYTHON wins; then python<version> from PATH, e.g. a deadsnakes
+# build in the CI image; then the OS Python.
+PYTHON="${PYTHON:-$(command -v "python$PY_VERSION" || echo python3)}"
 
-# venv needs ensurepip; on Debian, Ubuntu and Mint that is the python3-venv package.
+# venv needs ensurepip; on Debian, Ubuntu and Mint that is the <python>-venv
+# package, python3-venv or python3.15-venv for example.
 "$PYTHON" -c 'import ensurepip' 2>/dev/null || {
   echo "ERROR: $PYTHON cannot create a venv (no ensurepip)." >&2
-  echo "On Debian, Ubuntu or Mint: sudo apt install python3-venv" >&2
+  echo "On Debian, Ubuntu or Mint: sudo apt install $(basename "$PYTHON")-venv" >&2
   exit 1
 }
 
@@ -57,10 +61,12 @@ if [ -d "$TOOLS" ] && is_pinned_python "$PYTHON"; then
   rm -rf "$TOOLS" "$VENV"
 fi
 
-# A venv breaks silently when the python it symlinks gets upgraded away, and
-# the pin can move on — probe it instead of trusting that the files exist.
-if [ -d "$VENV" ] && ! is_pinned_python "$VENV/bin/python"; then
-  echo "existing .venv is broken or not on Python $PY_VERSION — rebuilding"
+# A venv breaks silently when the python it symlinks gets upgraded away, or
+# loses its pip, and the pin can move on — probe it instead of trusting that
+# the files exist.
+if [ -d "$VENV" ] && ! { is_pinned_python "$VENV/bin/python" \
+    && "$VENV/bin/python" -m pip --version >/dev/null 2>&1; }; then
+  echo "existing .venv is broken, has no pip, or is not on Python $PY_VERSION — rebuilding"
   rm -rf "$VENV"
 fi
 
@@ -70,5 +76,9 @@ if [ ! -x "$VENV/bin/python" ]; then
   "$VENV/bin/pip" install --quiet --upgrade pip
 fi
 
-# Fast no-op when already satisfied; picks up Renovate bumps of the pins.
-"$VENV/bin/pip" install --quiet -r requirements.txt
+# Fast no-op when already satisfied; picks up Renovate bumps of the pins. A
+# requirements-dev.txt, where there is one, holds the tools beside the
+# project's own dependencies.
+reqs=(-r requirements.txt)
+if [ -f requirements-dev.txt ]; then reqs+=(-r requirements-dev.txt); fi
+"$VENV/bin/pip" install --quiet "${reqs[@]}"

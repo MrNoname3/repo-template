@@ -14,7 +14,7 @@
     "description": "The template's workflow too: a new repository starts from it",
     "managerFilePatterns": [
       "/^\\.github/workflows/[^/]+\\.ya?ml$/",
-      "/^template/\\.github/workflows/[^/]+\\.ya?ml\\.jinja$/"
+      "/^template/\\.github/workflows/[^/]*\\.ya?ml[^/]*\\.jinja$/"
     ]
   }
 }

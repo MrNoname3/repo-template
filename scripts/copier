@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Copier from this repository's toolchain, built on first use: nothing to
+# install on the machine. Arguments go to copier, e.g.
+#   ~/Projects/repo-template/scripts/copier update --defaults
+set -euo pipefail
+here="$(cd "$(dirname "$0")/.." && pwd)"
+"$here/scripts/ensure-venv.sh" >&2
+exec "$here/.venv/bin/copier" "$@"

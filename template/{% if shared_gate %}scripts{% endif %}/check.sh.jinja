@@ -15,6 +15,9 @@ gate_toolchain
 {%- if ansible %}
 gate_ansible
 {%- endif %}
+{%- if python_project %}
+gate_python
+{%- endif %}
 gate_shellcheck
 gate_secret_scan
 gate_done

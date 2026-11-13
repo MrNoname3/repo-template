@@ -5,6 +5,12 @@
 id_rsa*
 id_ed25519*
 *.kdbx
+{%- if ansible %}
+# Ansible vault files, and the machine-local values site.yml keeps per host.
+secrets.yml
+*vault*
+host_vars/*/local.yml
+{%- endif %}
 
 # Repo-local toolchain, built by scripts/ensure-venv.sh.
 .venv/
@@ -20,6 +26,10 @@ id_ed25519*
 
 # Python bytecode: it records the absolute path of its source, a home directory included.
 __pycache__/
+{%- if python_project %}
+.ruff_cache/
+*.egg-info/
+{%- endif %}
 
 # Private secret-scan patterns for scripts/check.sh — never commit.
 .secret-patterns.local

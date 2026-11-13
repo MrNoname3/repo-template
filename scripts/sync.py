@@ -125,6 +125,7 @@ class Sync:
                         f"/repos/{q(self.owner)}/{q(repo)}", {"description": answers["description"]})
 
     def protection(self, repo, branch):
+        """The default branch's rule; only where Actions runs, which reports its check."""
         want = dict(self.config.get("protection", {}))
         if not want:
             return
@@ -180,11 +181,38 @@ class Sync:
         })
         return env
 
+    def close_stale(self, repo, keep):
+        """Close the open template pull requests other than `keep`, and delete their branches."""
+        base = f"/repos/{q(self.owner)}/{q(repo)}"
+        for pr in self.forge.pages(f"{base}/pulls?state=open"):
+            ref = pr["head"]["ref"]
+            if ref.startswith("template/") and ref != keep:
+                self.change(repo, f"close #{pr['number']} ({ref}), superseded", "PATCH",
+                            f"{base}/pulls/{pr['number']}", {"state": "closed"})
+                self.change(repo, f"delete branch {ref}", "DELETE",
+                            f"{base}/branches/{q(ref, safe='')}", None)
+
+    def update_behind(self, repo, branch, head):
+        """Merge the base into the open template pull request when it is behind:
+        a protected branch accepts only an up-to-date one."""
+        base = f"/repos/{q(self.owner)}/{q(repo)}"
+        for pr in self.forge.pages(f"{base}/pulls?state=open"):
+            if pr["head"]["ref"] != head:
+                continue
+            behind = self.forge.get(f"{base}/compare/{q(pr['head']['sha'])}...{q(branch)}")
+            if behind and behind.get("total_commits"):
+                self.change(repo, f"update #{pr['number']} ({head}), {behind['total_commits']} behind {branch}",
+                            "POST", f"{base}/pulls/{pr['number']}/update?style=merge", None)
+
     def template_update(self, repo, branch, answers, latest, copier):
-        if not latest or answers.get("_commit") == latest:
+        if not latest:
             return
         head = f"template/{latest}"
+        self.close_stale(repo, None if answers.get("_commit") == latest else head)
+        if answers.get("_commit") == latest:
+            return
         if self.forge.call("GET", f"/repos/{q(self.owner)}/{q(repo)}/branches/{q(head, safe='')}")[0] != 404:
+            self.update_behind(repo, branch, head)
             return
         self.changes += 1
         print(f"{repo}: pull request updating {answers.get('_commit')} -> {latest}")
@@ -240,7 +268,11 @@ class Sync:
                 branch = repo["default_branch"]
                 self.settings(name, repo)
                 self.description(name, repo, answers)
-                self.protection(name, branch)
+                if repo.get("has_actions"):
+                    self.protection(name, branch)
+                else:
+                    # Nothing on the forge would ever report the required check.
+                    print(f"{name}: Actions off, so no required check on {branch}")
                 self.collaborators(name)
                 self.template_update(name, branch, answers, latest, copier)
             if self.forge.call("GET", f"/repos/{q(self.owner)}/{q(name)}/contents/renovate.json")[0] != 404:

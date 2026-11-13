@@ -1,10 +1,12 @@
-_commit: v0.1.1
+_commit: v0.1.9
 _src_path: https://forge.invalid/MrNoname3/repo-template.git
 ansible: false
 ci_timeout: 30
 description: The Copier template every repository on the forge is built from
 python_pin: true
+python_project: false
 python_version: '3.14'
 repo_name: repo-template
 scan_identifiers: true
+shared_gate: true
 visibility: private

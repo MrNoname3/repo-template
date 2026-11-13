@@ -2,7 +2,9 @@
 {% if description %}
 {{ description }}
 {% endif %}
+{%- if shared_gate %}
 ## Checks
 
 `./scripts/check.sh` runs every check CI runs, in a repo-local toolchain
 (`.venv/`) that it builds on first use; nothing is installed system-wide.
+{%- endif %}

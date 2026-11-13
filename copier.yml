@@ -24,6 +24,7 @@ _skip_if_exists:
   - ansible.cfg
   - inventory.ini
   - site.yml
+  - pyproject.toml
   - scripts/check.sh
   - .secret-allow
 
@@ -49,34 +50,49 @@ copyright_year:
   default: "2026"
   when: "{{ visibility == 'public' }}"
 
+shared_gate:
+  type: bool
+  help: Does the repository use the template's release gate (scripts/check.sh on scripts/lib/gate.sh, the toolchain and the CI workflow)? Without it, only the shared files and the forge settings.
+  default: true
+
 scan_identifiers:
   type: bool
   help: Should the secret scan also fail on IPv4 and MAC addresses and UUIDs?
   default: "{{ visibility == 'public' }}"
+  when: "{{ shared_gate }}"
 
 ansible:
   type: bool
   help: Is this an Ansible repository (site.yml, ansible-lint)?
   default: false
+  when: "{{ shared_gate }}"
 
 galaxy:
   type: bool
   help: Does it install Ansible collections from requirements.yml?
   default: false
-  when: "{{ ansible }}"
+  when: "{{ shared_gate and ansible }}"
+
+python_project:
+  type: bool
+  help: Is this a Python project (ruff and pyright in the toolchain, configured in pyproject.toml)?
+  default: false
+  when: "{{ shared_gate }}"
 
 python_pin:
   type: bool
   help: Should the toolchain run on a pinned Python version, downloaded by uv where the OS has another?
-  default: true
+  default: "{{ shared_gate }}"
+  when: "{{ shared_gate }}"
 
 python_version:
   type: str
   help: The pinned Python version
   default: "3.14"
-  when: "{{ python_pin }}"
+  when: "{{ shared_gate and python_pin }}"
 
 ci_timeout:
   type: int
   help: CI job timeout in minutes
   default: 15
+  when: "{{ shared_gate }}"

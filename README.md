@@ -1,82 +1,89 @@
 # repo-template
 
 The [Copier](https://copier.readthedocs.io/) template every repository on the
-forge is built from: the release gate's shared steps, the repo-local
-toolchain, CI, and the files every repository carries. A repository keeps its
-own parts in files the template only creates once, so an update never
-overwrites them.
+forge is built from, and the sync that keeps their forge settings in line.
+Run the commands below from a host terminal; `scripts/copier` brings its own
+Copier, so nothing is installed.
 
-## What the template manages
+## Recipes
 
-| Updated by the template | Created once, then the repository's own |
-|---|---|
-| `scripts/lib/gate.sh` — the shared gate steps | `scripts/check.sh` — calls them, plus the repository's own steps |
-| `scripts/ensure-venv.sh` — the repo-local `.venv/` (and pinned Python, Ansible collections) | `requirements.txt`, `requirements-uv.txt`, `.python-version`, `requirements.yml` — the pins Renovate moves |
-| `.github/workflows/ci.yml` — runs `scripts/check.sh` | `renovate.json` — extends the shared presets |
-| `.gitignore` (the shared part; a repository adds its own lines) | `README.md`, `AGENTS.md`, `LICENSE`, `*.code-workspace` |
-| `.editorconfig`, `.shellcheckrc`, `CLAUDE.md`, `.gitea/` merge messages, `work/` | `ansible.cfg`, `inventory.ini`, `site.yml`, `.ansible-lint`, `.secret-allow` |
+**New repository**
 
-A managed file says so in its header. Change it here, not in the repository:
-the repository's copy is replaced by the next update, except for lines the
-repository added, which a three-way merge keeps.
+1. Create it on the forge, empty; choose private or public.
+2. Clone it into `~/Projects/<name>`, then in it:
+   `~/Projects/repo-template/scripts/copier copy https://forge.invalid/MrNoname3/repo-template.git .`
+   and answer the questions.
+3. `./scripts/check.sh`, commit, push. Within the hour the sync sets up the
+   settings, branch protection, the Renovate bot and the labels.
 
-## The template's address
+**Existing repository onto the template**
 
-A repository records where its template came from in `.copier-answers.yml`.
-That address is `https://forge.invalid/MrNoname3/repo-template.git`: `.invalid`
-never resolves, so the file names no real host and the repository can be
-mirrored anywhere. Git maps the address to the real forge, once per machine:
+1. `scripts/adopt.sh ~/Projects/<name> --data <answer>=<value> ...` (it stops
+   if a file the repository ignored would show up; put those patterns back
+   into its `.gitignore`).
+2. Put the repository's own lines back where `git diff` shows the template
+   overwrote them; move its checks into `scripts/check.sh` after the
+   `gate_*` calls.
+3. `./scripts/check.sh`, commit, push.
 
-```bash
-git config --global url."https://<your-forge>/".insteadOf "https://forge.invalid/"
-```
+**Change what every repository shares**
 
-## A new repository
+1. Edit `template/` here; `./scripts/check.sh` must pass.
+2. Commit, push, tag `vX.Y.Z`. The sync opens a pull request labelled
+   `template` in every repository; merge them once CI is green.
+3. A pull request titled `[conflicts]` fails CI until the markers in the files
+   its body names are resolved on its branch.
 
-Create the repository on the forge, empty, clone it, then in the clone:
+**Change a forge setting or a label:** edit `forge.toml`, push.
 
-```bash
-uvx copier copy https://forge.invalid/MrNoname3/repo-template.git .
-```
+**One repository's own check or secret-scan exception:** its
+`scripts/check.sh`, or a regex in its `.secret-allow`, with the reason above it.
 
-Copier asks the questions in `copier.yml` (visibility, Ansible, pinned Python,
-...). Run `./scripts/check.sh`, commit and push.
+**A Renovate rule for every repository:** in the renovate-config repository;
+one repository's own rule stays in its `renovate.json`.
 
-## An update
+**New machine:** set `git_forge_url` in machine-setup's
+`host_vars/<host>/local.yml` and run its `git` role, so git reads
+`forge.invalid` as the forge.
 
-Tag a new version here (`vX.Y.Z`); the Sync workflow opens the pull requests
-(below). By hand, in a repository:
+**When something breaks**
 
-```bash
-uvx copier update --defaults
-```
+- A template pull request is red: `gitea-api ci log <owner/repo>` shows why;
+  fix it on its branch, or here with a new tag.
+- No pull requests after a tag: look at this repository's **Sync** run; an
+  expired `SYNC_TOKEN` shows as HTTP 401.
 
-takes it to the newest tag with the answers it already has, merging the
-template's changes into the repository's. Look at `git diff`, run
-`./scripts/check.sh`, commit.
+## How it works
 
-## Checks
+**Files.** A file with "Managed by repo-template" in its header
+(`scripts/lib/gate.sh`, `scripts/ensure-venv.sh`, the CI workflow,
+`.editorconfig`, `.shellcheckrc`, `CLAUDE.md`, the merge messages, the first
+part of `.gitignore`) is the template's: an update rewrites it and a three-way
+merge keeps the lines a repository added. Everything else is created once and
+then the repository's own: `scripts/check.sh`, the pins, `renovate.json`,
+`README.md`, `AGENTS.md`, `pyproject.toml`, `.secret-allow`. With
+`shared_gate: false` a repository with a gate of its own gets only the shared
+files and the forge settings.
 
-`./scripts/check.sh` renders the template in each of its variants
-(`tests/render.sh`) and runs every rendered repository's own release gate, on
-top of the template repository's own checks.
+**Answers** (`copier.yml`): visibility (a public or publishable repository's
+secret scan also fails on addresses, MACs, UUIDs and home paths), Ansible,
+Ansible collections, Python project (ruff, pyright), pinned Python, CI
+timeout. A repository records them in `.copier-answers.yml`.
 
-## The forge side: forge.toml and the Sync workflow
+**The address.** Repositories record the template as
+`https://forge.invalid/MrNoname3/repo-template.git`; `.invalid` never
+resolves, so no repository names the real host. Git maps it per machine:
+`git config --global url."https://<your-forge>/".insteadOf "https://forge.invalid/"`.
 
-`forge.toml` holds what a repository has besides its files: its settings, the
-default branch's protection, the Renovate bot as a collaborator, and the
-labels Renovate and the sync put on pull requests. The **Sync** workflow
-(`scripts/sync.py`) applies it hourly, and at once on a new tag or a change to
-`forge.toml`:
+**The sync** (`scripts/sync.py`, the **Sync** workflow, hourly and on a tag or
+a `forge.toml` change) applies `forge.toml` to every repository built from the
+template (branch protection only where Actions runs), the labels to every
+repository with a `renovate.json`, and opens the update pull requests, closing
+those a newer one replaces and merging the base into one that has fallen
+behind, as protection accepts only an up-to-date branch. It never deletes. It
+needs the `SYNC_TOKEN` secret (repository and issue read-write); a manual run
+can be a dry run.
 
-- every repository built from this template gets the settings, the
-  protection and the collaborators, so a new one is set up within the hour of
-  its first push;
-- every repository with a `renovate.json` gets the labels;
-- a repository whose `.copier-answers.yml` names an older tag than the newest
-  one gets a pull request with `copier update` to it, labelled `template`;
-  merge conflicts are marked in its title and listed in its body.
-
-It never deletes anything. It needs the `SYNC_TOKEN` Actions secret, a token
-with read-write access to repositories and issues; a manual run can be a dry
-run that only prints the plan.
+**Checks.** `./scripts/check.sh` here renders every variant
+(`tests/render.sh`) and runs each one's gate, including that it fails on a
+planted secret, a type error, a lint error and a conflict marker.
