@@ -77,6 +77,26 @@ commit "$OUT/ansible-public"
 (cd "$OUT/ansible-public" && ./scripts/check.sh > /dev/null)
 echo "OK: .secret-allow lets the address through"
 
+# python<version> on PATH is taken over python3, and makes uv's download
+# unneeded: a python3 that cannot run must not matter, and .python/ goes.
+d="$PWD/$OUT/ansible-public" stub="$PWD/$OUT/stub-bin"
+real="$(readlink -f "$d/.venv/bin/python")"
+if [ -d "$d/.python" ]; then # uv's download: move it so its removal spares it
+  mv "$d/.python" "$PWD/$OUT/moved-python"
+  real="${real/#"$d/.python"/"$PWD/$OUT/moved-python"}"
+fi
+mkdir -p "$stub" "$d/.python"
+printf '#!/bin/sh\nexit 1\n' > "$stub/python3"
+chmod +x "$stub/python3"
+ln -s "$real" "$stub/python3.14"
+rm -rf "$d/.venv"
+(cd "$d" && env -u PYTHON PATH="$stub:$PATH" ./scripts/check.sh > /dev/null)
+[ ! -e "$d/.python" ] && [ "$(readlink -f "$d/.venv/bin/python")" = "$real" ] || {
+  echo "FAIL: .venv was not built on python3.14 from PATH" >&2
+  exit 1
+}
+echo "OK: python<version> from PATH is used before uv"
+
 render python --data visibility=private --data python_project=true --data python_pin=false
 printf 'def double(x: int) -> int:\n    return x * 2\n\n\nhalf: str = double(2)\n' > "$OUT/python/typed.py"
 commit "$OUT/python"
