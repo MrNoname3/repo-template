@@ -18,6 +18,11 @@ gate_shellcheck
 step "forge.toml (scripts/sync.py, no token: the file only)"
 env -u SYNC_TOKEN "$VENV/bin/python" scripts/sync.py
 
+step "workflow templates are YAML before rendering (Renovate reads them so)"
+"$VENV/bin/python" -c 'import sys, yaml; [yaml.safe_load(open(f)) for f in sys.argv[1:]]' \
+  template/.github/workflows/*.jinja
+echo "OK"
+
 step "template variants (tests/render.sh)"
 tests/render.sh
 
